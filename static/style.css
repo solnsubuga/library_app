@@ -1,0 +1,43 @@
+#login-form {
+    text-align: center;
+}
+
+#login-form input {
+    margin: .5em 1em;
+}
+
+#error {
+    text-align: center;
+    color: red;
+    margin-top: 1em;
+}
+
+#search-results tr:hover,
+#view-results tr:hover,
+#view-page th:hover {
+    background-color: lightgrey;
+    cursor: pointer;
+}
+
+#page-switcher {
+    width: 100%;
+    text-align: center;
+}
+
+#page-switcher button {
+    font-size: 10px;
+    font-weight: bold;
+    margin: 1em;
+    padding: 3em;
+}
+
+.btn-delete {
+    color: white;
+    background-color: #d9534f;
+    border-color: #d43f3a;
+    border-radius: 8px;
+}
+
+#user-info{
+    text-align: right;
+}

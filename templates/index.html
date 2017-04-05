@@ -1,0 +1,175 @@
+<html>
+    <head>
+        <title>Library</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="/static/style.css" rel="stylesheet">
+    </head>
+
+    <body>
+        <div id="user-info">
+            <div>
+                You are currently logged in as <b>{{.User}}</b>
+                <a href="/logout">(Log out)</a>
+            </div>
+        </div>
+        <div id="page-switcher">
+            <button onclick="showViewPage()">ViewLibrary</button>
+            <button onclick="showSearchPage()">Add Books</button>
+        </div>
+        <div id="search-page" style="display: none;">
+            <form id="search-form" onsubmit="return false">
+                <input type="text" name="search" value="">
+                <input type="submit" name="" value="Search" onclick="submitSearch()">
+            </form>
+
+            <table width="100%">
+                <thead>
+                    <tr style="text-align: left">
+                        <th width="40%">Title</th>
+                        <th width="30%">Author</th>
+                        <th width="10%">Year</th>
+                        <th width="20%">Id</th>
+                    </tr>
+                </thead>
+                <tbody id="search-results">
+
+                </tbody>
+            </table>
+
+        </div>
+
+        <div id="view-page">
+            <form id="filter-view-results" onchange="filterViewResults()" style="float: right;">
+                <select name="filter" style="font-size: 18px; min-width: 10em;">
+                     <option value="all">All Books</option>
+                     <option value="fiction">Fiction</option>
+                     <option value="nonfiction">Non Fiction</option>
+                 </select>
+            </form>
+
+            <table width="100%">
+                <thead>
+                    <tr style="text-align: left">
+                        <th width="45%" onclick="sortBooks('title')">Title</th>
+                        <th width="35%" onclick="sortBooks('author')">Author</th>
+                        <th width="15%" onclick="sortBooks('classification')">Classification</th>
+                        <th width="5%"></th>
+                    </tr>
+                </thead>
+                <tbody id="view-results">
+                    {{range .Books}}
+                    <tr id="book-row-{{.Pk}}">
+                        <td>{{.Title}}</td>
+                        <td>{{.Author}}</td>
+                        <td>{{.Classification}}</td>
+                        <td><button class="btn-delete" onclick='deleteBook({{.Pk}})'>Delete</button></td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
+        <script src="/static/jquery.min.js"></script>
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $("#filter-view-results option[value='" + {{.Filter }} + "']").prop("selected", true);
+            })
+
+            function filterViewResults() {
+                $.ajax({
+                    method: "GET",
+                    url: "/books",
+                    data: $("#filter-view-results").serialize(),
+                    success: rebuildBookCollection
+                })
+            }
+
+            function rebuildBookCollection(result) {
+                var books = JSON.parse(result);
+                if (!books) return;
+
+                $("#view-results").empty();
+                books.forEach(function (book) {
+                    appendBook(book);
+                });
+            }
+
+            function appendBook(book) {
+                $("#view-results").append(
+                    "<tr id='book-row-" + book.Pk +
+                    "'><td>" +
+                    book.Title + "</td><td>" + book
+                    .Author +
+                    "</td><td>" + book.Classification +
+                    "</td><td><button class='btn-delete' onclick='deleteBook(" +
+                    book.Pk +
+                    ")'>Delete</button><td></tr>");
+            }
+
+            function sortBooks(columnName) {
+                $.ajax({
+                    method: "GET",
+                    url: "/books?sortBy=" + columnName,
+                    success: rebuildBookCollection
+                });
+            }
+
+            function showSearchPage() {
+                $("#search-page").show();
+                $("#view-page").hide();
+            }
+
+            function showViewPage() {
+                $("#view-page").show();
+                $("#search-page").hide();
+            }
+
+            function deleteBook(pk) {
+                console.log(pk)
+                $.ajax({
+                    method: "DELETE",
+                    url: "/books/" + pk,
+                    success: function () {
+                        $("#book-row-" + pk).remove();
+                    }
+                });
+            }
+
+            function submitSearch() {
+                $.ajax({
+                    url: '/search',
+                    method: 'POST',
+                    data: $("#search-form").serialize(),
+                    success: function (rawData) {
+                        var parsed = JSON.parse(rawData);
+                        if (!parsed) return;
+                        var searchResults = $("#search-results");
+                        searchResults.empty();
+
+                        parsed.forEach(function (result) {
+                            var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author +
+                                "</td><td>" + result.Year + "</td><td>" + result.ID +
+                                "</td></tr>");
+                            searchResults.append(row);
+                            row.on("click", function () {
+                                $.ajax({
+                                    url: "/books?id=" + result.ID,
+                                    method: "PUT",
+                                    success: function (data) {
+                                        var book = JSON.parse(data);
+                                        if (!book) return;
+                                        appendBook(book);
+                                    }
+                                })
+                            })
+                        });
+                    }
+                });
+                return false;
+            }
+        </script>
+    </body>
+
+</html>
